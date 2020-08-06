@@ -3,7 +3,8 @@
 
 """ CNN modules for face verification """
 
-import  warnings
+import warnings
+
 warnings.simplefilter('ignore')
 
 import numpy as np
@@ -21,7 +22,7 @@ def train_triplet_generator(df, batch_size=128, img_size=(96, 96)):
     """ training set triplet images generator """
     idxs = list(range(len(df)))
     labels = np.zeros((batch_size, 3, 1), dtype=K.floatx())
-    
+
     while True:
         np.random.shuffle(idxs)
         anchor_img_path = []
@@ -31,19 +32,19 @@ def train_triplet_generator(df, batch_size=128, img_size=(96, 96)):
         # get the image path list for all images
         for i in range(len(idxs)):
             # get anchor and positive images
-            pair_path_list = df[idxs[i]]
-            count = i
+            pair_path_list = df.loc[idxs[i], 'paths']
+            count = df.loc[idxs[i], 'count']
             idx1, idx2 = np.random.randint(low=0, high=count, size=2)
             anchor = pair_path_list[idx1]
             positive = pair_path_list[idx2]
-            
+
             # get negative images
             if i == len(idxs) - 1:
                 neg_idx = idxs[0]
             else:
                 neg_idx = idxs[i + 1]
-            neg_path_list = df[neg_idx]
-            neg_count = neg_idx
+            neg_path_list = df.loc[neg_idx, 'paths']
+            neg_count = df.loc[neg_idx, 'count']
             idx3 = np.random.randint(low=0, high=neg_count, size=1)[0]
             negative = neg_path_list[idx3]
 
@@ -53,9 +54,9 @@ def train_triplet_generator(df, batch_size=128, img_size=(96, 96)):
 
         # generate batch images
         for j in range(len(anchor_img_path) // batch_size):
-            batch_anchor_img_path = anchor_img_path[j*batch_size : (j + 1)*batch_size]
-            batch_positive_img_path = positive_img_path[j*batch_size : (j + 1)*batch_size]
-            batch_negative_img_path = negative_img_path[j*batch_size : (j + 1)*batch_size]
+            batch_anchor_img_path = anchor_img_path[j * batch_size: (j + 1) * batch_size]
+            batch_positive_img_path = positive_img_path[j * batch_size: (j + 1) * batch_size]
+            batch_negative_img_path = negative_img_path[j * batch_size: (j + 1) * batch_size]
 
             anchor_imgs = []
             positive_imgs = []
@@ -96,31 +97,31 @@ def test_triplet_generator(df, batch_size=100, loops=2, img_size=(96, 96), seed=
         for outer in range(loops):
             for i in range(len(idxs)):
                 # get anchor and positive images
-                pair_path_list = df[idxs[i]]
-                count = i
+                pair_path_list = df.loc[idxs[i], 'paths']
+                count = df.loc[idxs[i], 'count']
                 idx1, idx2 = np.random.randint(low=0, high=count, size=2)
                 anchor = pair_path_list[idx1]
                 positive = pair_path_list[idx2]
-                
+
                 # get negative images
                 if i == len(idxs) - 1:
                     neg_idx = idxs[0]
                 else:
                     neg_idx = idxs[i + 1]
-                neg_path_list = df[neg_idx]
-                neg_count = neg_idx
+                neg_path_list = df.loc[neg_idx, 'paths']
+                neg_count = df.loc[neg_idx, 'count']
                 idx3 = np.random.randint(low=0, high=neg_count, size=1)[0]
                 negative = neg_path_list[idx3]
 
                 anchor_img_path.append(anchor)
                 positive_img_path.append(positive)
                 negative_img_path.append(negative)
-                    
+
         # generate batch images
         for j in range(len(anchor_img_path) // batch_size):
-            batch_anchor_img_path = anchor_img_path[j*batch_size : (j + 1)*batch_size]
-            batch_positive_img_path = positive_img_path[j*batch_size : (j + 1)*batch_size]
-            batch_negative_img_path = negative_img_path[j*batch_size : (j + 1)*batch_size]
+            batch_anchor_img_path = anchor_img_path[j * batch_size: (j + 1) * batch_size]
+            batch_positive_img_path = positive_img_path[j * batch_size: (j + 1) * batch_size]
+            batch_negative_img_path = negative_img_path[j * batch_size: (j + 1) * batch_size]
 
             anchor_imgs = []
             positive_imgs = []
@@ -161,7 +162,7 @@ def triplet_net(base_model, input_shape=(96, 96, 3)):
     stacks = Lambda(lambda x: K.stack(x, axis=1), name='output')([anc_vec, pos_vec, neg_vec])
 
     # define inputs and outputs
-    inputs=[anchor, positive, negative]
+    inputs = [anchor, positive, negative]
     outputs = stacks
 
     # define the triplet model
@@ -172,6 +173,7 @@ def triplet_net(base_model, input_shape=(96, 96, 3)):
 
 def triplet_loss(margin=0.2):
     """ wrapper function for triplet loss """
+
     def loss(y_true, y_pred):
         """ function to calculate the triplet loss"""
         # define zero constant
@@ -189,6 +191,7 @@ def triplet_loss(margin=0.2):
         full_loss = K.sum(K.maximum(partial_loss, zero), axis=0)
 
         return full_loss
+
     return loss
 
 
@@ -210,8 +213,8 @@ def conv2d_bn(x, layer=None, cv1_out=None, cv1_filter=(1, 1), cv1_strides=(1, 1)
     else:
         num = '1'
 
-    tensor = Conv2D(cv1_out, cv1_filter, strides=cv1_strides, name=layer+'_conv'+num)(x)
-    tensor = BatchNormalization(axis=3, epsilon=0.00001, name=layer+'_bn'+num)(tensor)
+    tensor = Conv2D(cv1_out, cv1_filter, strides=cv1_strides, name=layer + '_conv' + num)(x)
+    tensor = BatchNormalization(axis=3, epsilon=0.00001, name=layer + '_bn' + num)(tensor)
     tensor = Activation('relu')(tensor)
 
     if padding is None:
@@ -221,8 +224,8 @@ def conv2d_bn(x, layer=None, cv1_out=None, cv1_filter=(1, 1), cv1_strides=(1, 1)
     if cv2_out is None:
         return tensor
 
-    tensor = Conv2D(cv2_out, cv2_filter, strides=cv2_strides, name=layer+'_conv2')(tensor)
-    tensor = BatchNormalization(axis=3, epsilon=0.00001, name=layer+'_bn2')(tensor)
+    tensor = Conv2D(cv2_out, cv2_filter, strides=cv2_strides, name=layer + '_conv2')(tensor)
+    tensor = BatchNormalization(axis=3, epsilon=0.00001, name=layer + '_bn2')(tensor)
     tensor = Activation('relu')(tensor)
 
     return tensor

@@ -66,6 +66,6 @@ print("test")
 print(testx.shape, testy.shape)
 
 # # save arrays to one file in compressed format
-savez_compressed('dataf.npz', trainx, trainy, testx, testy)
+savez_compressed('./Data/dataf.npz', trainx, trainy, testx, testy)
 
 

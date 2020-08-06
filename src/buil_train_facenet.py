@@ -1,5 +1,8 @@
 
 import warnings
+
+import src
+
 warnings.simplefilter('ignore')
 from os import listdir
 from os.path import isdir
@@ -16,27 +19,18 @@ from face_verification.facenet import train_triplet_generator
 from face_verification.facenet import test_triplet_generator
 from face_verification.facenet import triplet_loss
 
-
-def load_img(directory):
-    facesTest = []
-    facesTrain = []
-    for subdir in listdir(directory):
-        # path
-        path = directory + subdir + '/'
-        for filename in listdir(path):
-            if filename.find('.jpg') != -1:
-                img_path = path + filename
-                if filename.find('_0ID.jpg') != -1:
-                    facesTrain.append(img_path)
-                else:
-                    facesTest.append(img_path)
-
-    return facesTrain, facesTest
-
 #load_img
-facesTrain, facesTest = load_img('E:/Hoc/BMI/venv/kieu/Data/')
+facesTrain, facesTest = src.load_img('E:/Hoc/BMI/venv/kieu/Data/')
 
 
+def path_to_list(df):
+    paths = list(df)
+    count = len(paths)
+
+    return pd.Series([count, paths], index=['count', 'paths'])
+
+vgg2_train_df = facesTrain.apply(path_to_list).reset_index()
+vgg2_test_df = facesTest.apply(path_to_list).reset_index()
 # define training and test dataset image generator
 loops = 10
 test_generator = test_triplet_generator(facesTest, batch_size=100, loops=loops, seed=42)
